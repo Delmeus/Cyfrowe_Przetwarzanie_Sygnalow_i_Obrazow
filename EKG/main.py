@@ -93,14 +93,19 @@ if __name__ == '__main__':
             # freq = np.fft.fftfreq(t.shape[-1])
             # plt.plot(freq, sp.real, freq, sp.imag)
             # plt.show()
-            fs = 1000  # Sampling frequency
+            fs = 1000
             length = 256
             signal_50Hz = generate_sine_wave(50, length, fs)
+            signal_60Hz = generate_sine_wave(60, length, fs)
 
 
             # Task 2: Plot frequency spectrum
             plot_frequency_spectrum(signal_50Hz, fs)
-
+            plot_frequency_spectrum(signal_60Hz, fs)
+        elif answer == 4:
+            pass
+        elif answer == 5:
+            pass
         elif answer == 6:
             break
 
