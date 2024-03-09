@@ -41,15 +41,14 @@ def plot_ecg_time(matrix):
     plt.ylabel('Value ')
     plt.show()
 
+
 def generate_sine_wave(freq, length, fs):
     t = np.arange(0, length/fs, 1/fs)
     signal = np.sin(2 * np.pi * freq * t)
-    plt.plot(signal)
-    plt.show()
     return signal
 
 
-def plot_frequency_spectrum(signal, fs):
+def plot_frequency_spectrum(signal, fs, title):
     n = len(signal)
     fft_result = np.fft.fft(signal)
     freq = np.fft.fftfreq(n, 1/fs)
@@ -57,7 +56,7 @@ def plot_frequency_spectrum(signal, fs):
     plt.plot(freq[:n//2], np.abs(fft_result[:n//2]))
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Amplitude')
-    plt.title('Frequency Spectrum')
+    plt.title(title)
     plt.show()
 
 
@@ -98,10 +97,15 @@ if __name__ == '__main__':
             signal_50Hz = generate_sine_wave(50, length, fs)
             signal_60Hz = generate_sine_wave(60, length, fs)
 
+            plt.plot(signal_50Hz)
+            plt.title('Sine 50Hz')
+            plt.show()
+            plot_frequency_spectrum(signal_50Hz, fs, 'Frequency Spectrum 50Hz')
 
-            # Task 2: Plot frequency spectrum
-            plot_frequency_spectrum(signal_50Hz, fs)
-            plot_frequency_spectrum(signal_60Hz, fs)
+            plt.plot(signal_50Hz + signal_60Hz)
+            plt.title('Sine 50Hz + 60Hz')
+            plt.show()
+            plot_frequency_spectrum(signal_50Hz + signal_60Hz, fs, 'Frequency Spectrum 50Hz + 60Hz')
         elif answer == 4:
             pass
         elif answer == 5:
