@@ -20,7 +20,7 @@ def plot_small_ecg(matrix, frequency):
     plt.ylabel('Value ')
     plt.show()
 
-
+# chyba da sie uproscic feest
 def plot_big_ecg(matrix, frequency):
     freq_array = []
     freq_array.append(frequency)
@@ -66,21 +66,23 @@ if __name__ == '__main__':
     fs = 1/1000
     while True:
         print('Laboratorium 1 - EKG')
-        print('1. Wczytaj plik\n2. Wyswietl plik\n3. Transformata Fouriera\n4. Odwrocona transformata Fouriera\n5. Widmo\n6. Zakoncz program')
+        print('1. Wczytaj plik\n2. Wyswietl plik\n3. Transformata Fouriera - zadanie 2'
+              '\n4. Odwrocona transformata Fouriera\n5. Widmo - zadanie 3'
+              '\n6. Zakoncz program')
         answer = int(input('Podaj opcje = '))
         if answer == 1:
             filename = input('Podaj nazwe pliku = ')
             if os.path.isfile(filename):
-               data = read_file(filename)
+                data = read_file(filename)
             else:
                 print('Nie ma takiego pliku')
         elif answer == 2:
             if filename == 'ekg1.txt' or filename == 'ekg100.txt':
                 if filename == 'ekg1.txt':
-                    fs = 1/1000
+                    fs = 1/1000 # nie wiem czy nie do zmiany
                     plot_small_ecg(data, fs)
                 else:
-                    fs = 1/360
+                    fs = 1/360 # tutaj tez
                     plot_big_ecg(data, fs)
             elif filename == 'ekg_noise.txt':
                 plot_ecg_time(data)
@@ -109,7 +111,11 @@ if __name__ == '__main__':
         elif answer == 4:
             pass
         elif answer == 5:
-            pass
+            fs = 1000
+            ecg_signal = np.loadtxt('ekg100.txt')
+            plt.plot(ecg_signal)
+            plt.show()
+            plot_frequency_spectrum(ecg_signal, fs, 'ekg100 Fourier transform')
         elif answer == 6:
             break
 
