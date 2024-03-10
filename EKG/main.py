@@ -22,14 +22,11 @@ def plot_small_ecg(matrix, frequency):
 
 # chyba da sie uproscic feest
 def plot_big_ecg(matrix, frequency):
-    freq_array = []
-    freq_array.append(frequency)
-    for i in range(1, len(matrix)):
-        freq_array.append(freq_array[i - 1] + frequency)
-    plt.plot(freq_array, matrix)
+    time_values = np.arange(0, len(matrix) * frequency, frequency)
+    plt.plot(time_values, matrix)
 
     plt.xlabel('Time [s]')
-    plt.ylabel('Value ')
+    plt.ylabel('Value')
     plt.show()
 
 
@@ -58,6 +55,18 @@ def plot_frequency_spectrum(signal, fs, title):
     plt.ylabel('Amplitude')
     plt.title(title)
     plt.show()
+
+
+def plot_inverse_fft(fft_result, fs, title):
+    inv_fft_result = np.fft.ifft(fft_result)
+    time = np.arange(0, len(inv_fft_result)) / fs
+
+    plt.plot(time, np.real(inv_fft_result))
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.title(title)
+    plt.show()
+    return np.real(inv_fft_result)
 
 
 if __name__ == '__main__':
@@ -116,6 +125,12 @@ if __name__ == '__main__':
             plt.plot(ecg_signal)
             plt.show()
             plot_frequency_spectrum(ecg_signal, fs, 'ekg100 Fourier transform')
+            inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), fs, "Inverted Fourier transform")
+
+            diff = ecg_signal - inv_result
+            plt.plot(diff)
+            plt.title("Signal diff")
+            plt.show()
         elif answer == 6:
             break
 
