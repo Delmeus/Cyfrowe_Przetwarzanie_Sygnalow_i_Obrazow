@@ -76,7 +76,7 @@ if __name__ == '__main__':
     while True:
         print('Laboratorium 1 - EKG')
         print('1. Wczytaj plik\n2. Wyswietl plik\n3. Transformata Fouriera - zadanie 2'
-              '\n4. Odwrocona transformata Fouriera\n5. Widmo - zadanie 3'
+              '\n4. Odwrocona transformata Fouriera\n5. Filtracja - zadanie 3'
               '\n6. Zakoncz program')
         answer = int(input('Podaj opcje = '))
         if answer == 1:
@@ -117,6 +117,12 @@ if __name__ == '__main__':
             plt.title('Sine 50Hz + 60Hz')
             plt.show()
             plot_frequency_spectrum(signal_50Hz + signal_60Hz, fs, 'Frequency Spectrum 50Hz + 60Hz')
+
+            inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), fs, "Inverted Fourier transform")
+            diff = signal_50Hz + signal_60Hz - inv_result
+            plt.plot(diff)
+            plt.title("Signal diff")
+            plt.show()
         elif answer == 4:
             pass
         elif answer == 5:
