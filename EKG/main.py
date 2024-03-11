@@ -2,32 +2,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os.path
 
+from scipy import signal
+
 
 def read_file(filename):
     matrix = np.loadtxt(filename)
     return matrix
 
 
-def plot_small_ecg(matrix, frequency):
-    freq_array = []
-    freq_array.append(frequency)
-    for i in range(1, len(matrix)):
-        freq_array.append(freq_array[i - 1] + frequency)
-    for measurement in matrix.transpose():
-        plt.plot(freq_array, measurement)
+def plot_ecg(matrix, frequency):
+    t = np.arange(0, len(matrix)) / frequency
 
+    plt.plot(t, matrix)
     plt.xlabel('Time [s]')
     plt.ylabel('Value ')
     plt.show()
 
-# chyba da sie uproscic feest
-def plot_big_ecg(matrix, frequency):
-    time_values = np.arange(0, len(matrix) * frequency, frequency)
-    plt.plot(time_values, matrix)
 
-    plt.xlabel('Time [s]')
-    plt.ylabel('Value')
-    plt.show()
+# def plot_big_ecg(matrix, frequency):
+#     time_values = np.arange(0, len(matrix) * frequency, frequency)
+#     plt.plot(time_values, matrix)
+#
+#     plt.xlabel('Time [s]')
+#     plt.ylabel('Value')
+#     plt.show()
 
 
 def plot_ecg_time(matrix):
@@ -69,14 +67,22 @@ def plot_inverse_fft(fft_result, fs, title):
     return np.real(inv_fft_result)
 
 
+def apply_filter(data, fs, cutoff_freq, filter_type):
+    nyquist_freq = 0.5 * fs
+    normal_cutoff = cutoff_freq / nyquist_freq
+    b = signal.butter(4, normal_cutoff, btype=filter_type, analog=False, output='ba')
+    print(len(b))
+    return signal.filtfilt(b[0], b[1], data.transpose())
+
+
 if __name__ == '__main__':
     data = []
     filename = ''
-    fs = 1/1000
+    sampling_freq = 1000
     while True:
         print('Laboratorium 1 - EKG')
-        print('1. Wczytaj plik\n2. Wyswietl plik\n3. Transformata Fouriera - zadanie 2'
-              '\n4. Odwrocona transformata Fouriera\n5. Filtracja - zadanie 3'
+        print('1. Wczytaj plik\n2. Wyswietl plik\n3. Transformata Fouriera - zadanie 2\n'
+              '4. Widmo - zadanie 3\n5. Filtracja - zadanie 4'
               '\n6. Zakoncz program')
         answer = int(input('Podaj opcje = '))
         if answer == 1:
@@ -88,11 +94,11 @@ if __name__ == '__main__':
         elif answer == 2:
             if filename == 'ekg1.txt' or filename == 'ekg100.txt':
                 if filename == 'ekg1.txt':
-                    fs = 1/1000 # nie wiem czy nie do zmiany
-                    plot_small_ecg(data, fs)
+                    sampling_freq = 1000
+                    plot_ecg(data, sampling_freq)
                 else:
-                    fs = 1/360 # tutaj tez
-                    plot_big_ecg(data, fs)
+                    sampling_freq = 360
+                    plot_ecg(data, sampling_freq)
             elif filename == 'ekg_noise.txt':
                 plot_ecg_time(data)
             else:
@@ -103,40 +109,57 @@ if __name__ == '__main__':
             # freq = np.fft.fftfreq(t.shape[-1])
             # plt.plot(freq, sp.real, freq, sp.imag)
             # plt.show()
-            fs = 1000
+            sampling_freq = 1000
             length = 256
-            signal_50Hz = generate_sine_wave(50, length, fs)
-            signal_60Hz = generate_sine_wave(60, length, fs)
+            signal_50Hz = generate_sine_wave(50, length, sampling_freq)
+            signal_60Hz = generate_sine_wave(60, length, sampling_freq)
 
             plt.plot(signal_50Hz)
             plt.title('Sine 50Hz')
             plt.show()
-            plot_frequency_spectrum(signal_50Hz, fs, 'Frequency Spectrum 50Hz')
+            plot_frequency_spectrum(signal_50Hz, sampling_freq, 'Frequency Spectrum 50Hz')
 
             plt.plot(signal_50Hz + signal_60Hz)
             plt.title('Sine 50Hz + 60Hz')
             plt.show()
-            plot_frequency_spectrum(signal_50Hz + signal_60Hz, fs, 'Frequency Spectrum 50Hz + 60Hz')
+            plot_frequency_spectrum(signal_50Hz + signal_60Hz, sampling_freq, 'Frequency Spectrum 50Hz + 60Hz')
 
-            inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), fs, "Inverted Fourier transform")
+            inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), sampling_freq, "Inverted Fourier transform")
             diff = signal_50Hz + signal_60Hz - inv_result
             plt.plot(diff)
             plt.title("Signal diff")
             plt.show()
         elif answer == 4:
-            pass
-        elif answer == 5:
-            fs = 1000
+            sampling_freq = 1000
             ecg_signal = np.loadtxt('ekg100.txt')
             plt.plot(ecg_signal)
             plt.show()
-            plot_frequency_spectrum(ecg_signal, fs, 'ekg100 Fourier transform')
-            inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), fs, "Inverted Fourier transform")
+            plot_frequency_spectrum(ecg_signal, sampling_freq, 'ekg100 Fourier transform')
+            inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), sampling_freq, "Inverted Fourier transform")
 
             diff = ecg_signal - inv_result
             plt.plot(diff)
             plt.title("Signal diff")
             plt.show()
+        elif answer == 5:
+            data = np.loadtxt('ekg_noise.txt')
+            sampling_freq = 360
+            # plot_ecg_time(data)
+            plot_frequency_spectrum(data,sampling_freq, "Unfiltered Fourier transform")
+            cutoff_freq_lp = 60
+            filtered_data_lp = apply_filter(data, sampling_freq, cutoff_freq_lp, 'low')
+
+            plot_frequency_spectrum(filtered_data_lp, sampling_freq, 'Filtered EKG (Low-Pass) Frequency Spectrum')
+
+            plt.plot(data, label='Original EKG Signal')
+            plt.show()
+            plt.plot(filtered_data_lp, label='Filtered EKG Signal')
+            plt.show()
+            #sos = apply_filter(data, 360, 60, 'low')
+            #sos = signal.butter(10, 60, 'hp', fs=360, output='sos')
+            #filtered_data = signal.sosfilt(sos, data)
+            #plot_ecg_time(filtered_data)
+            pass
         elif answer == 6:
             break
 
