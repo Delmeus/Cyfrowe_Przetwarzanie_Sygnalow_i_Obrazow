@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import os.path
 
 from scipy import signal
-
+from scipy.signal import butter, lfilter
 
 def read_file(filename):
     matrix = np.loadtxt(filename)
@@ -17,15 +17,6 @@ def plot_ecg(matrix, frequency):
     plt.xlabel('Time [s]')
     plt.ylabel('Value ')
     plt.show()
-
-
-# def plot_big_ecg(matrix, frequency):
-#     time_values = np.arange(0, len(matrix) * frequency, frequency)
-#     plt.plot(time_values, matrix)
-#
-#     plt.xlabel('Time [s]')
-#     plt.ylabel('Value')
-#     plt.show()
 
 
 def plot_ecg_time(matrix):
@@ -43,16 +34,12 @@ def generate_sine_wave(freq, length, fs):
     return signal
 
 
-def plot_frequency_spectrum(signal, fs, title):
+def plot_frequency_spectrum(signal, fs):
     n = len(signal)
     fft_result = np.fft.fft(signal)
     freq = np.fft.fftfreq(n, 1/fs)
 
-    plt.plot(freq[:n//2], np.abs(fft_result[:n//2]))
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Amplitude')
-    plt.title(title)
-    plt.show()
+    return freq[:n//2], np.abs(fft_result[:n//2])
 
 
 def plot_inverse_fft(fft_result, fs, title):
@@ -67,12 +54,37 @@ def plot_inverse_fft(fft_result, fs, title):
     return np.real(inv_fft_result)
 
 
-def apply_filter(data, fs, cutoff_freq, filter_type):
-    nyquist_freq = 0.5 * fs
-    normal_cutoff = cutoff_freq / nyquist_freq
-    b = signal.butter(4, normal_cutoff, btype=filter_type, analog=False, output='ba')
-    print(len(b))
-    return signal.filtfilt(b[0], b[1], data.transpose())
+def butter_lowpass(cutoff, fs, data,order=10):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return lfilter(b, a, data)
+
+
+def butter_highpass(cutoff, fs, data, order=10):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    return signal.filtfilt(b, a, data)
+
+
+def plot_filtered_data(unfiltered_data, filtered_data):
+    figure, axis = plt.subplots(2, 2, figsize=(10, 8))
+    axis[0, 0].plot(unfiltered_data[0], filtered_data)
+    axis[0, 0].set_title('Filtered with lowpass  EKG Signal')
+
+    axis[0, 1].plot(unfiltered_data[0], unfiltered_data[1] - filtered_data)
+    axis[0, 1].set_title('Difference between original and filtered (lowpass)')
+
+    result = plot_frequency_spectrum(filtered_data, sampling_freq)
+    axis[1, 0].plot(result[0], result[1])
+    axis[1, 0].set_title('Filtered data Spectrum')
+
+    result = plot_frequency_spectrum(unfiltered_data[1] - filtered_data, sampling_freq)
+    axis[1, 1].plot(result[0], result[1])
+    axis[1, 1].set_title('Difference Spectrum')
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -104,61 +116,76 @@ if __name__ == '__main__':
             else:
                 print("Brak wczytanego pliku!")
         elif answer == 3:
-            # t = np.arange(65536)
-            # sp = np.fft.fft(np.sin(t))
-            # freq = np.fft.fftfreq(t.shape[-1])
-            # plt.plot(freq, sp.real, freq, sp.imag)
-            # plt.show()
             sampling_freq = 1000
-            length = 256
+            length = 65536
             signal_50Hz = generate_sine_wave(50, length, sampling_freq)
             signal_60Hz = generate_sine_wave(60, length, sampling_freq)
 
             plt.plot(signal_50Hz)
             plt.title('Sine 50Hz')
             plt.show()
-            plot_frequency_spectrum(signal_50Hz, sampling_freq, 'Frequency Spectrum 50Hz')
+
+            result = plot_frequency_spectrum(signal_50Hz, sampling_freq)
+            plt.plot(result[0], result[1])
+            plt.title('Frequency Spectrum 50Hz')
+            plt.show()
 
             plt.plot(signal_50Hz + signal_60Hz)
             plt.title('Sine 50Hz + 60Hz')
             plt.show()
-            plot_frequency_spectrum(signal_50Hz + signal_60Hz, sampling_freq, 'Frequency Spectrum 50Hz + 60Hz')
+
+            result = plot_frequency_spectrum(signal_50Hz + signal_60Hz, sampling_freq)
+            plt.plot(result[0], result[1])
+            plt.title('Frequency Spectrum 50Hz + 60Hz')
+            plt.show()
 
             inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), sampling_freq, "Inverted Fourier transform")
             diff = signal_50Hz + signal_60Hz - inv_result
             plt.plot(diff)
             plt.title("Signal diff")
             plt.show()
+
         elif answer == 4:
             sampling_freq = 1000
             ecg_signal = np.loadtxt('ekg100.txt')
+
             plt.plot(ecg_signal)
+            plt.title("ekg100 signal")
             plt.show()
-            plot_frequency_spectrum(ecg_signal, sampling_freq, 'ekg100 Fourier transform')
+
+            result = plot_frequency_spectrum(ecg_signal, sampling_freq,)##
+            plt.plot(result[0], result[1])
+            plt.title('ekg100 Fourier transform')
+            plt.show()
+
             inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), sampling_freq, "Inverted Fourier transform")
 
             diff = ecg_signal - inv_result
             plt.plot(diff)
             plt.title("Signal diff")
             plt.show()
+
         elif answer == 5:
-            data = np.loadtxt('ekg_noise.txt')
+            data = np.loadtxt('ekg_noise.txt').transpose()
             sampling_freq = 360
-            # plot_ecg_time(data)
-            plot_frequency_spectrum(data,sampling_freq, "Unfiltered Fourier transform")
+
+            plt.plot(data[0], data[1])
+            plt.title('Original ECG Signal')
+            plt.show()
+
+            result = plot_frequency_spectrum(data[1], sampling_freq)
+            plt.plot(result[0], result[1])
+            plt.title('Original ECG Spectrum')
+            plt.show()
+
             cutoff_freq_lp = 60
-            filtered_data_lp = apply_filter(data, sampling_freq, cutoff_freq_lp, 'low')
+            cutoff_freq_hp = 5
 
-            plot_frequency_spectrum(filtered_data_lp, sampling_freq, 'Filtered EKG (Low-Pass) Frequency Spectrum')
+            data_lp = butter_lowpass(cutoff_freq_lp, sampling_freq, data[1])
+            plot_filtered_data(data, data_lp)
 
-            plt.plot(data, label='Original EKG Signal')
-            plt.show()
-            plt.plot(filtered_data_lp, label='Filtered EKG Signal')
-            plt.show()
-            #sos = apply_filter(data, 360, 60, 'low')
-            #sos = signal.butter(10, 60, 'hp', fs=360, output='sos')
-            #filtered_data = signal.sosfilt(sos, data)
-            #plot_ecg_time(filtered_data)
+            data_hp = butter_highpass(cutoff_freq_hp, sampling_freq, data_lp)
+            plot_filtered_data(data, data_hp)
             pass
         elif answer == 6:
             break
