@@ -5,6 +5,7 @@ import os.path
 from scipy import signal
 from scipy.signal import butter, lfilter
 
+
 def read_file(filename):
     matrix = np.loadtxt(filename)
     return matrix
@@ -42,11 +43,14 @@ def plot_frequency_spectrum(signal, fs):
     return freq[:n//2], np.abs(fft_result[:n//2])
 
 
-def plot_inverse_fft(fft_result, fs, title):
+def plot_inverse_fft(fft_result, fs, title, limit=0):
     inv_fft_result = np.fft.ifft(fft_result)
     time = np.arange(0, len(inv_fft_result)) / fs
 
-    plt.plot(time, np.real(inv_fft_result))
+    if limit != 0:
+        plt.plot(time[:limit], np.real(inv_fft_result)[:limit])
+    else:
+        plt.plot(time, np.real(inv_fft_result))
     plt.xlabel('Time (s)')
     plt.ylabel('Amplitude')
     plt.title(title)
@@ -68,13 +72,13 @@ def butter_highpass(cutoff, fs, data, order=10):
     return signal.filtfilt(b, a, data)
 
 
-def plot_filtered_data(unfiltered_data, filtered_data):
+def plot_filtered_data(unfiltered_data, filtered_data, type):
     figure, axis = plt.subplots(2, 2, figsize=(10, 8))
     axis[0, 0].plot(unfiltered_data[0], filtered_data)
-    axis[0, 0].set_title('Filtered with lowpass  EKG Signal')
+    axis[0, 0].set_title(f'Filtered with {type}  EKG Signal')
 
     axis[0, 1].plot(unfiltered_data[0], unfiltered_data[1] - filtered_data)
-    axis[0, 1].set_title('Difference between original and filtered (lowpass)')
+    axis[0, 1].set_title(f'Difference between original and filtered {type}')
 
     result = plot_frequency_spectrum(filtered_data, sampling_freq)
     axis[1, 0].plot(result[0], result[1])
@@ -121,7 +125,7 @@ if __name__ == '__main__':
             signal_50Hz = generate_sine_wave(50, length, sampling_freq)
             signal_60Hz = generate_sine_wave(60, length, sampling_freq)
 
-            plt.plot(signal_50Hz)
+            plt.plot((signal_50Hz)[:500])
             plt.title('Sine 50Hz')
             plt.show()
 
@@ -130,7 +134,7 @@ if __name__ == '__main__':
             plt.title('Frequency Spectrum 50Hz')
             plt.show()
 
-            plt.plot(signal_50Hz + signal_60Hz)
+            plt.plot((signal_50Hz + signal_60Hz)[:500])
             plt.title('Sine 50Hz + 60Hz')
             plt.show()
 
@@ -139,9 +143,9 @@ if __name__ == '__main__':
             plt.title('Frequency Spectrum 50Hz + 60Hz')
             plt.show()
 
-            inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), sampling_freq, "Inverted Fourier transform")
+            inv_result = plot_inverse_fft(np.fft.fft(signal_50Hz + signal_60Hz), sampling_freq, "Inverted Fourier transform", 500)
             diff = signal_50Hz + signal_60Hz - inv_result
-            plt.plot(diff)
+            plt.plot(diff[:500])
             plt.title("Signal diff")
             plt.show()
 
@@ -149,19 +153,19 @@ if __name__ == '__main__':
             sampling_freq = 1000
             ecg_signal = np.loadtxt('ekg100.txt')
 
-            plt.plot(ecg_signal)
+            plt.plot(ecg_signal[:5000])
             plt.title("ekg100 signal")
             plt.show()
 
-            result = plot_frequency_spectrum(ecg_signal, sampling_freq,)##
-            plt.plot(result[0], result[1])
+            result = plot_frequency_spectrum(ecg_signal, sampling_freq)##
+            plt.plot(result[0][:5000], result[1][:5000])
             plt.title('ekg100 Fourier transform')
             plt.show()
 
-            inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), sampling_freq, "Inverted Fourier transform")
+            inv_result = plot_inverse_fft(np.fft.fft(ecg_signal), sampling_freq, "Inverted Fourier transform", 5000)
 
             diff = ecg_signal - inv_result
-            plt.plot(diff)
+            plt.plot(diff[:500])
             plt.title("Signal diff")
             plt.show()
 
@@ -182,10 +186,10 @@ if __name__ == '__main__':
             cutoff_freq_hp = 5
 
             data_lp = butter_lowpass(cutoff_freq_lp, sampling_freq, data[1])
-            plot_filtered_data(data, data_lp)
+            plot_filtered_data(data, data_lp, "lowpass")
 
             data_hp = butter_highpass(cutoff_freq_hp, sampling_freq, data_lp)
-            plot_filtered_data(data, data_hp)
+            plot_filtered_data(data, data_hp, "highpass")
             pass
         elif answer == 6:
             break
